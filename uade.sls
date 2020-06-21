@@ -41,8 +41,8 @@
 
   (c-function
     [uade_new_state (uade-config*) uade-state*]
-    [uade-play (string int uade-state*) int]
-    [uade-read ((* unsigned-8) size_t uade-state*) ssize_t]
+    [uade_play (string int uade-state*) int]
+    [uade_read ((* unsigned-8) size_t uade-state*) ssize_t]
     [uade-stop (uade-state*) int]
     [uade-cleanup-state () void]
     [uade-get-fd (uade-state*) int]
@@ -55,10 +55,25 @@
       [(state)
        (uade_new_state state)]))
 
+  (define uade-play
+    (case-lambda
+      [(state fname)
+       (uade_play fname -1 state)]
+      [(state fname subsong)
+       (uade_play fname subsong state)]))
+
+  ;; Expose an interface where uade-state is the first argument. Using syntax-rules is an optimisation so
+  ;; the args are re-arranged at compile time.
+  (define-syntax uade-read
+    (syntax-rules ()
+      [(_ state bufptr bufsize)
+       (uade_read bufptr bufsize state)]))
+
   ;; ALSA pcm lib works mainly in frames so include a version using frames as the unit.
-  (define uade-read/frames
-    (lambda (state framebuf frame-count)
-      (/ (uade-read framebuf (* frame-count *uade-bytes/frame*) state) *uade-bytes/frame*)))
+  (define-syntax uade-read/frames
+    (syntax-rules ()
+      [(_ state framebuf frame-count)
+       (/ (uade-read state framebuf (* frame-count *uade-bytes/frame*)) *uade-bytes/frame*)]))
 
   #;(define uade-read/bv
     (case-lambda
