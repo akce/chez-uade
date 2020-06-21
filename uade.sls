@@ -2,6 +2,9 @@
   (export
     *uade-channels* *uade-bytes/sample* *uade-bytes/frame*
 
+    uade-malloc/frames uade-free
+    uade-read/frames
+
     uade-new-state
     uade-play
     uade-read
@@ -10,7 +13,7 @@
     uade-get-fd
     uade-get-sampling-rate
 
-    uade-read/bv
+    #;uade-read/bv
     )
   (import
     (chezscheme)
@@ -25,6 +28,16 @@
   (define *uade-channels* 2)
   (define *uade-bytes/sample* 2)
   (define *uade-bytes/frame* (* *uade-channels* *uade-bytes/sample*))
+
+  ;; ALSA pcm lib works mainly in frames so define size using that unit.
+  (define uade-malloc/frames
+    (lambda (frame-count)
+      (make-ftype-pointer unsigned-8 (foreign-alloc (* frame-count *uade-bytes/frame*)))))
+
+  (define uade-free
+    (lambda (framebuf)
+      (foreign-free (ftype-pointer-address framebuf))
+      (unlock-object framebuf)))
 
   (c-function
     [uade_new_state (uade-config*) uade-state*]
@@ -42,7 +55,12 @@
       [(state)
        (uade_new_state state)]))
 
-  (define uade-read/bv
+  ;; ALSA pcm lib works mainly in frames so include a version using frames as the unit.
+  (define uade-read/frames
+    (lambda (state framebuf frame-count)
+      (/ (uade-read framebuf (* frame-count *uade-bytes/frame*) state) *uade-bytes/frame*)))
+
+  #;(define uade-read/bv
     (case-lambda
       [(state)
        (uade-read/bv state (* *uade-bytes/frame* 1024))]

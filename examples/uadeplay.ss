@@ -9,24 +9,25 @@
 (define device "default")
 
 (define block/frames 2048)
-(define block/bytes (* *uade-bytes/frame* block/frames))
 
 (define main
   (lambda (modfile)
     (let ([handle (snd-pcm-open device (snd-pcm-stream 'playback) 0)]
-          [uade-state (uade-new-state)])
+          [uade-state (uade-new-state)]
+          [framebuf (uade-malloc/frames block/frames)])
       (snd-pcm-set-params handle (snd-pcm-format 's16-le) (snd-pcm-access 'rw-interleaved) 2 (uade-get-sampling-rate uade-state) 1 500000)
       (uade-play modfile -1 uade-state)
-      (let loop ([bv (uade-read/bv uade-state block/bytes)])
+      (let loop ([frames-read (uade-read/frames uade-state framebuf block/frames)])
         (cond
-          [(null? bv)
+          [(= frames-read 0)
            #t]
           [else
             ;; TODO check for underruns.
-            (snd-pcm-writei/bv handle bv (/ (bytevector-length bv) *uade-bytes/frame*))
-            (loop (uade-read/bv uade-state block/bytes))]))
+            (snd-pcm-writei handle framebuf frames-read)
+            (loop (uade-read/frames uade-state framebuf block/frames))]))
       (snd-pcm-drain handle)
       (uade-stop uade-state)
-      (snd-pcm-close handle))))
+      (snd-pcm-close handle)
+      (uade-free framebuf))))
 
 (main (car (command-line-arguments)))
