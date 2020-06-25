@@ -91,6 +91,26 @@
         (display "pcm state: ")(display (snd-pcm-state handle))(newline)
 
         (uade-play uade-state modfile)
+        ;; Dump song info.
+        (let ([inf (uade-get-song-info uade-state)])
+          (display "module bytes: ")(display (uade-song-info-module-bytes inf))(newline)
+          (display "duration: ")(display (uade-song-info-duration inf))(newline)
+          (display "subsong bytes: ")(display (uade-song-info-subsong-bytes inf))(newline)
+          (display "song bytes: ")(display (uade-song-info-song-bytes inf))(newline)
+          (display "module filename: ")(display (uade-song-info-module-fname inf))(newline)
+          (display "player filename: ")(display (uade-song-info-player-fname inf))(newline)
+          (display "format name: ")(display (uade-song-info-format-name inf))(newline)
+          (display "module name: ")(display (uade-song-info-module-name inf))(newline)
+          (display "player name: ")(display (uade-song-info-player-name inf))(newline)
+          (display "subsong cur: ")(display (uade-song-info-subsong-current inf))(newline)
+          (display "subsong default: ")(display (uade-song-info-subsong-default inf))(newline)
+          (display "subsong min: ")(display (uade-song-info-subsong-min inf))(newline)
+          (display "subsong max: ")(display (uade-song-info-subsong-max inf))(newline)
+          (display "custom: ")(display (uade-song-info-custom inf))(newline)
+          (display "content: ")(display (uade-song-info-content inf))(newline)
+          (display "ext: ")(display (uade-song-info-ext inf))(newline)
+          )
+
         ;; Prime the alsa ring buffer before play proper.
         (let ([n (load-frames)])
           (display "pre-loading uade frames: ")(display n)(newline)

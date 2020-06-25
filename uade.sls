@@ -2,6 +2,25 @@
   (export
     *uade-channels* *uade-bytes/sample* *uade-bytes/frame*
 
+    uade-subsong-info uade-detection-info uade-song-info-t
+    uade-song-info-module-bytes
+    uade-song-info-module-md5
+    uade-song-info-duration
+    uade-song-info-subsong-bytes
+    uade-song-info-song-bytes
+    uade-song-info-module-fname
+    uade-song-info-player-fname
+    uade-song-info-format-name
+    uade-song-info-module-name
+    uade-song-info-player-name
+    uade-song-info-subsong-current
+    uade-song-info-subsong-min
+    uade-song-info-subsong-default
+    uade-song-info-subsong-max
+    uade-song-info-custom
+    uade-song-info-content
+    uade-song-info-ext
+
     uade-malloc/frames uade-free
     uade-read/frames
 
@@ -12,6 +31,7 @@
     uade-cleanup-state
     uade-get-fd
     uade-get-sampling-rate
+    uade-get-song-info
 
     #;uade-read/bv
     )
@@ -28,6 +48,105 @@
   (define *uade-channels* 2)
   (define *uade-bytes/sample* 2)
   (define *uade-bytes/frame* (* *uade-channels* *uade-bytes/sample*))
+
+  (define-ftype uade-subsong-info
+    (struct
+      [cur	int]
+      [min	int]
+      [def	int]
+      [max	int]))
+
+  (define-ftype uade-detection-info
+    (struct
+      [custom	boolean]
+      [content	boolean]
+      [ext	(array 16 unsigned-8)]
+      [_	void*]))
+
+  (define-ftype path-t (array 4096 unsigned-8))
+
+  (define-ftype uade-song-info-t
+    (struct
+      [subsongs		uade-subsong-info]
+      [detection-info	uade-detection-info]
+      [module-bytes	size_t]
+      [module-md5	(array 33 unsigned-8)]
+      [duration		double]
+      [subsong-bytes	integer-64]
+      [song-bytes	integer-64]
+      [module-fname	path-t]
+      [player-fname	path-t]
+      [format-name	(array 256 unsigned-8)]
+      [module-name	(array 256 unsigned-8)]
+      [player-name	(array 256 unsigned-8)]))
+
+  (define uade-song-info-module-bytes
+    (lambda (usi)
+      (ftype-ref uade-song-info-t (module-bytes) usi)))
+
+  (define uade-song-info-module-md5
+    (lambda (usi)
+      (u8*->string (ftype-&ref uade-song-info-t (module-md5) usi))))
+
+  (define uade-song-info-duration
+    (lambda (usi)
+      (ftype-ref uade-song-info-t (duration) usi)))
+
+  (define uade-song-info-subsong-bytes
+    (lambda (usi)
+      (ftype-ref uade-song-info-t (subsong-bytes) usi)))
+
+  (define uade-song-info-song-bytes
+    (lambda (usi)
+      (ftype-ref uade-song-info-t (song-bytes) usi)))
+
+  (define uade-song-info-module-fname
+    (lambda (usi)
+      (u8*->string (ftype-&ref uade-song-info-t (module-fname) usi))))
+
+  (define uade-song-info-player-fname
+    (lambda (usi)
+      (u8*->string (ftype-&ref uade-song-info-t (player-fname) usi))))
+
+  (define uade-song-info-format-name
+    (lambda (usi)
+      (u8*->string (ftype-&ref uade-song-info-t (format-name) usi))))
+
+  (define uade-song-info-module-name
+    (lambda (usi)
+      (u8*->string (ftype-&ref uade-song-info-t (module-name) usi))))
+
+  (define uade-song-info-player-name
+    (lambda (usi)
+      (u8*->string (ftype-&ref uade-song-info-t (player-name) usi))))
+
+  (define uade-song-info-subsong-current
+    (lambda (usi)
+      (ftype-ref uade-song-info-t (subsongs cur) usi)))
+
+  (define uade-song-info-subsong-min
+    (lambda (usi)
+      (ftype-ref uade-song-info-t (subsongs min) usi)))
+
+  (define uade-song-info-subsong-default
+    (lambda (usi)
+      (ftype-ref uade-song-info-t (subsongs def) usi)))
+
+  (define uade-song-info-subsong-max
+    (lambda (usi)
+      (ftype-ref uade-song-info-t (subsongs max) usi)))
+
+  (define uade-song-info-custom
+    (lambda (usi)
+      (ftype-ref uade-song-info-t (detection-info custom) usi)))
+
+  (define uade-song-info-content
+    (lambda (usi)
+      (ftype-ref uade-song-info-t (detection-info content) usi)))
+
+  (define uade-song-info-ext
+    (lambda (usi)
+      (u8*->string (ftype-&ref uade-song-info-t (detection-info ext) usi))))
 
   ;; ALSA pcm lib works mainly in frames so define size using that unit.
   (define uade-malloc/frames
@@ -46,7 +165,8 @@
     [uade-stop (uade-state*) int]
     [uade-cleanup-state () void]
     [uade-get-fd (uade-state*) int]
-    [uade-get-sampling-rate (uade-state*) int])
+    [uade-get-sampling-rate (uade-state*) int]
+    [uade-get-song-info (uade-state*) (* uade-song-info-t)])
 
   (define uade-new-state
     (case-lambda
