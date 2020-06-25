@@ -66,17 +66,30 @@
             (let ([max-frames (fxmin buffer/frames (snd-pcm-avail-update handle))])
               (uade-read/frames uade-state framebuf max-frames))))
 
+        (define bytes/second (* *uade-bytes/frame* (uade-get-sampling-rate uade-state)))
+
+        (define current-pos/seconds
+          (lambda ()
+            (flonum->fixnum
+              (real->flonum
+                (/ (uade-song-info-subsong-bytes (uade-get-song-info uade-state))
+                   bytes/second)))))
+
         (define play-frame
           (lambda (watcher revents)
             ;; we can write more frames to the buffer.
             (let ([frames-read (load-frames)])
-              (display "# ")(display frames-read)(display "\r")
+              (display "pos ")(display (current-pos/seconds))
+              (display " song frame ")(display (/ (uade-song-info-song-bytes (uade-get-song-info uade-state)) *uade-bytes/frame*))
+              (display " subsong frame ")(display (/ (uade-song-info-subsong-bytes (uade-get-song-info uade-state)) *uade-bytes/frame*))
+              (display " loaded frame ")(display frames-read)(display "\r")
               (cond
                 [(> frames-read 0)
                  ;; TODO check for underruns.
                  (snd-pcm-writei handle framebuf frames-read)]
                 [else
-                 (display "song end")(newline)
+                  (newline)
+                  (display "song end")(newline)
                  (ev-timer-stop watcher)]))))
 
         ;; Calculate the libev timer wait-time (between 0 and 1) based on buffer size, song frame rate,
@@ -93,10 +106,9 @@
         (uade-play uade-state modfile)
         ;; Dump song info.
         (let ([inf (uade-get-song-info uade-state)])
+          (display "sampling rate: ")(display (uade-get-sampling-rate uade-state))(newline)
           (display "module bytes: ")(display (uade-song-info-module-bytes inf))(newline)
-          (display "duration: ")(display (uade-song-info-duration inf))(newline)
-          (display "subsong bytes: ")(display (uade-song-info-subsong-bytes inf))(newline)
-          (display "song bytes: ")(display (uade-song-info-song-bytes inf))(newline)
+          (display "duration: ")(display (flonum->fixnum (uade-song-info-duration inf)))(newline)
           (display "module filename: ")(display (uade-song-info-module-fname inf))(newline)
           (display "player filename: ")(display (uade-song-info-player-fname inf))(newline)
           (display "format name: ")(display (uade-song-info-format-name inf))(newline)
@@ -109,7 +121,7 @@
           (display "custom: ")(display (uade-song-info-custom inf))(newline)
           (display "content: ")(display (uade-song-info-content inf))(newline)
           (display "ext: ")(display (uade-song-info-ext inf))(newline)
-          )
+          (display "total frames: ")(display (flonum->fixnum (* (uade-song-info-duration inf) (uade-get-sampling-rate uade-state))))(newline))
 
         ;; Prime the alsa ring buffer before play proper.
         (let ([n (load-frames)])
