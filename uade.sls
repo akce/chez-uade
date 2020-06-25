@@ -53,21 +53,36 @@
       [()
        (uade-new-state 0)]
       [(state)
-       (uade_new_state state)]))
+       (let ([st (uade_new_state state)])
+         (if (= st 0)
+             (error #f "error")
+             st))]))
 
   (define uade-play
     (case-lambda
       [(state fname)
-       (uade_play fname -1 state)]
+       (uade-play state fname -1)]
       [(state fname subsong)
-       (uade_play fname subsong state)]))
+       (let ([rc (uade_play fname subsong state)])
+         (cond
+           [(> rc 0)
+            rc]
+           [(= rc 0)
+            (error #f "song cannot be played" fname subsong)]
+           [else
+             (error #f "uade fatal error" fname subsong)]))]))
 
   ;; Expose an interface where uade-state is the first argument. Using syntax-rules is an optimisation so
   ;; the args are re-arranged at compile time.
   (define-syntax uade-read
     (syntax-rules ()
       [(_ state bufptr bufsize)
-       (uade_read bufptr bufsize state)]))
+       (let ([rc (uade_read bufptr bufsize state)])
+         (cond
+           [(>= rc 0)
+            rc]
+           [else
+            (error 'uade-read "error" rc)]))]))
 
   ;; ALSA pcm lib works mainly in frames so include a version using frames as the unit.
   (define-syntax uade-read/frames
