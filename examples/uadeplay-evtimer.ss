@@ -54,6 +54,8 @@
 
       ;; setup frame buffer and poll descriptors.
       (let* ([framebuf (uade-malloc/frames buffer/frames)])
+        (define play-watcher #f)
+        (define stdin-watcher #f)
 
         ;; [proc] load-frames: loads frames into framebuf.
         ;; [return] the actual number of frames loaded into framebuf.
@@ -90,7 +92,15 @@
                 [else
                   (newline)
                   (display "song end")(newline)
-                 (ev-timer-stop watcher)]))))
+                 (ev-timer-stop watcher)
+                 (ev-io-stop stdin-watcher)]))))
+
+        (set! stdin-watcher
+          (ev-io 0 (evmask 'READ)
+                 (lambda (w rev)
+                   (display "key pressed: ")(display (read-char))(newline)
+                   (ev-io-stop w)
+                   (ev-timer-stop play-watcher))))
 
         ;; Calculate the libev timer wait-time (between 0 and 1) based on buffer size, song frame rate,
         ;; and how empty we want the buffer before refilling.
@@ -99,7 +109,7 @@
                   (/
                     (* buffer/frames (/ buffer-empty/percent 100))
                     (uade-get-sampling-rate uade-state)))])
-          (ev-timer wait-time wait-time play-frame))
+          (set! play-watcher (ev-timer wait-time wait-time play-frame)))
 
         (display "pcm state: ")(display (snd-pcm-state handle))(newline)
 
@@ -135,7 +145,7 @@
         (ev-run)
         (uade-free framebuf))
       (snd-pcm-drain handle)
-      (display "pcm state: ")(display (snd-pcm-state handle))(newline)
+      (display "ending pcm state: ")(display (snd-pcm-state handle))(newline)
       (uade-stop uade-state)
       (snd-pcm-close handle))))
 
