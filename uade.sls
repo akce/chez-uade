@@ -163,7 +163,7 @@
     [uade_play (string int uade-state*) int]
     [uade_read ((* unsigned-8) size_t uade-state*) ssize_t]
     [uade-stop (uade-state*) int]
-    [uade-cleanup-state () void]
+    [uade-cleanup-state (uade-state*) void]
     [uade-get-fd (uade-state*) int]
     [uade-get-sampling-rate (uade-state*) int]
     [uade-get-song-info (uade-state*) (* uade-song-info-t)])
