@@ -12,7 +12,7 @@
 
 (define main
   (lambda (modfile)
-    (let ([handle (snd-pcm-open device (snd-pcm-stream 'playback) 0)]
+    (let ([handle (snd-pcm-open device 'playback 0)]
           [uade-state (uade-new-state)]
           [framebuf (uade-malloc/frames block/frames)])
       (snd-pcm-set-params handle (snd-pcm-format 's16-le) (snd-pcm-access 'rw-interleaved) 2 (uade-get-sampling-rate uade-state) 1 500000)

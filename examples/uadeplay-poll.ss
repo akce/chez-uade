@@ -52,7 +52,7 @@
 
 (define main
   (lambda (modfile)
-    (let ([handle (snd-pcm-open device (snd-pcm-stream 'playback) (snd-open-mode 'nonblock))]
+    (let ([handle (snd-pcm-open device 'playback 'nonblock)]
           [uade-state (uade-new-state)])
 
       (configure-hw-params handle uade-state)
@@ -75,10 +75,15 @@
               (uade-read/frames uade-state framebuf max-frames))))
 
         (snd-pcm-poll-descriptors handle fds fd-count)
+        (display "pcm stream: ")(display (snd-pcm-stream handle))(newline)
+        (display "pcm type ")(display (snd-pcm-type handle))(newline)
         (display "pollfd count: ")(display fd-count)(newline)
         (do ([i 0 (+ i 1)])
           ((= i fd-count))
-          (display "  fd: ")(display (pollfd-fd fds i))(newline))
+          (display "  fd: ")(display (pollfd-fd fds i))
+          (display " events: ")(display (poll-flags (pollfd-events fds i)))
+          (display " revents: ")(display (pollfd-revents fds i))
+          (newline))
 
         (display "pcm state: ")(display (snd-pcm-state handle))(newline)
 

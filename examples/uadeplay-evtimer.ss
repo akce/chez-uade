@@ -46,7 +46,7 @@
 
 (define main
   (lambda (modfile)
-    (let ([handle (snd-pcm-open device (snd-pcm-stream 'playback) (snd-open-mode 'nonblock))]
+    (let ([handle (snd-pcm-open device 'playback 'nonblock)]
           [uade-state (uade-new-state)])
 
       (configure-hw-params handle uade-state)
